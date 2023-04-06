@@ -14,19 +14,11 @@
 constexpr static const float player_pi = PI;
 constexpr static const float player_two_pi = player_pi*2.0f;
 
-typedef struct voice_func_info {
-    void* buffer;
-    size_t frame_count;
-    unsigned int channel_count;
-    unsigned int bit_depth;
-    unsigned int sample_max;
-} voice_func_info_t;
-typedef void (*voice_func_t)(const voice_func_info_t& info, void* state);
-typedef struct voice {
-    voice_func_t fn;
+typedef struct voice_info {
+    voice_function_t fn;
     void* fn_state;
-    voice* next;
-} voice_t;
+    voice_info* next;
+} voice_info_t;
 typedef struct {
     float frequency;
     float amplitude;
@@ -129,7 +121,7 @@ static bool player_read_fourcc(on_read_stream_callback on_read_stream, void* on_
     }
     return true;
 }
-static void sin_voice(const voice_func_info_t& info, void*state) {
+static void sin_voice(const voice_function_info_t& info, void*state) {
     waveform_info_t* wi = (waveform_info_t*)state;
     for(int i = 0;i<info.frame_count;++i) {
         float f = (sinf(wi->phase) + 1.0f) * 0.5f;
@@ -166,7 +158,7 @@ static void sin_voice(const voice_func_info_t& info, void*state) {
         }
     }
 }
-static void sqr_voice(const voice_func_info_t& info, void*state) {
+static void sqr_voice(const voice_function_info_t& info, void*state) {
     waveform_info_t* wi = (waveform_info_t*)state; 
     for(int i = 0;i<info.frame_count;++i) {
         float f = ((wi->phase>player_pi)+1.0f)*.5f;
@@ -204,7 +196,7 @@ static void sqr_voice(const voice_func_info_t& info, void*state) {
     }    
 }
 
-static void saw_voice(const voice_func_info_t& info, void*state) {
+static void saw_voice(const voice_function_info_t& info, void*state) {
     waveform_info_t* wi = (waveform_info_t*)state;
     for(int i = 0;i<info.frame_count;++i) {
         float f = (wi->phase>=0.0f);
@@ -241,7 +233,7 @@ static void saw_voice(const voice_func_info_t& info, void*state) {
         }
     }
 }
-static void tri_voice(const voice_func_info_t& info, void*state) {
+static void tri_voice(const voice_function_info_t& info, void*state) {
     waveform_info_t* wi = (waveform_info_t*)state;
     for(int i = 0;i<info.frame_count;++i) {
         float f = ((wi->phase / (player_pi)) + 1.0f) * .5f;
@@ -278,7 +270,7 @@ static void tri_voice(const voice_func_info_t& info, void*state) {
         }
     }
 }
-static void wav_voice_16_2_to_16_2(const voice_func_info_t& info, void*state) {
+static void wav_voice_16_2_to_16_2(const voice_function_info_t& info, void*state) {
     wav_info_t* wi = (wav_info_t*)state;
     if(!wi->loop&&wi->pos>=wi->length) {
         return;
@@ -305,7 +297,7 @@ static void wav_voice_16_2_to_16_2(const voice_func_info_t& info, void*state) {
         }
     }
 }
-static void wav_voice_16_2_to_8_1(const voice_func_info_t& info, void*state) {
+static void wav_voice_16_2_to_8_1(const voice_function_info_t& info, void*state) {
     wav_info_t* wi = (wav_info_t*)state;
     if(!wi->loop&&wi->pos>=wi->length) {
         return;
@@ -338,7 +330,7 @@ static void wav_voice_16_2_to_8_1(const voice_func_info_t& info, void*state) {
         ++dst;
     }
 }
-static void wav_voice_16_1_to_16_2(const voice_func_info_t& info, void*state) {
+static void wav_voice_16_1_to_16_2(const voice_function_info_t& info, void*state) {
     wav_info_t* wi = (wav_info_t*)state;
     if(!wi->loop&&wi->pos>=wi->length) {
         return;
@@ -365,7 +357,7 @@ static void wav_voice_16_1_to_16_2(const voice_func_info_t& info, void*state) {
         }
     }
 }
-static void wav_voice_16_2_to_16_1(const voice_func_info_t& info, void*state) {
+static void wav_voice_16_2_to_16_1(const voice_function_info_t& info, void*state) {
     wav_info_t* wi = (wav_info_t*)state;
     if(!wi->loop&&wi->pos>=wi->length) {
         return;
@@ -398,7 +390,7 @@ static void wav_voice_16_2_to_16_1(const voice_func_info_t& info, void*state) {
         ++dst;
     }
 }
-static void wav_voice_16_1_to_16_1(const voice_func_info_t& info, void*state) {
+static void wav_voice_16_1_to_16_1(const voice_function_info_t& info, void*state) {
     wav_info_t* wi = (wav_info_t*)state;
     if(!wi->loop&&wi->pos>=wi->length) {
         return;
@@ -424,7 +416,7 @@ static void wav_voice_16_1_to_16_1(const voice_func_info_t& info, void*state) {
     }
 }
 
-static void wav_voice_16_1_to_8_1(const voice_func_info_t& info, void*state) {
+static void wav_voice_16_1_to_8_1(const voice_function_info_t& info, void*state) {
     wav_info_t* wi = (wav_info_t*)state;
     if(!wi->loop&&wi->pos>=wi->length) {
         return;
@@ -450,14 +442,14 @@ static void wav_voice_16_1_to_8_1(const voice_func_info_t& info, void*state) {
     }
 }
 
-static voice_handle_t player_add_voice( voice_handle_t* in_out_first, voice_func_t fn, void* fn_state, void*(allocator)(size_t)) {
-    voice_t** pv = (voice_t**)in_out_first;
-    voice_t* v = *pv;
+static voice_handle_t player_add_voice( voice_handle_t* in_out_first, voice_function_t fn, void* fn_state, void*(allocator)(size_t)) {
+    voice_info_t** pv = (voice_info_t**)in_out_first;
+    voice_info_t* v = *pv;
     if(v!=nullptr) {
         while(v->next!=nullptr) {
             v=v->next;
         }
-        v->next = (voice_t*)allocator(sizeof(voice_t));
+        v->next = (voice_info_t*)allocator(sizeof(voice_info_t));
         if(v->next==nullptr) {
             return nullptr;
         }
@@ -466,7 +458,7 @@ static voice_handle_t player_add_voice( voice_handle_t* in_out_first, voice_func
         v->next->fn_state = fn_state;
         v=v->next;
     } else {
-        *pv = (voice_t*)allocator(sizeof(voice_t));
+        *pv = (voice_info_t*)allocator(sizeof(voice_info_t));
         v=*pv;
         v->next = nullptr;
         v->fn = fn;
@@ -475,8 +467,8 @@ static voice_handle_t player_add_voice( voice_handle_t* in_out_first, voice_func
    return v;
 }
 static bool player_remove_voice(voice_handle_t* in_out_first,voice_handle_t handle,void(deallocator)(void*)) {
-    voice_t** pv = (voice_t**)in_out_first;
-    voice_t* v = *pv;
+    voice_info_t** pv = (voice_info_t**)in_out_first;
+    voice_info_t* v = *pv;
     if(v==nullptr) {return false;}
     if(handle==v) {
         *pv = v->next;
@@ -577,7 +569,7 @@ void player::deinitialize() {
     m_deallocator(m_buffer);
     m_buffer = nullptr;
 }
-static voice_handle_t player_waveform(unsigned int sample_rate,voice_handle_t* in_out_first, voice_func_t fn, float frequency, float amplitude, void*(allocator)(size_t)) {
+static voice_handle_t player_waveform(unsigned int sample_rate,voice_handle_t* in_out_first, voice_function_t fn, float frequency, float amplitude, void*(allocator)(size_t)) {
     waveform_info_t* wi = (waveform_info_t*)allocator(sizeof(waveform_info_t));
     if(wi==nullptr) {
         return nullptr;
@@ -795,6 +787,12 @@ voice_handle_t player::wav(on_read_stream_callback on_read_stream, void* on_read
     return nullptr;
     
 }
+voice_handle_t player::voice(voice_function_t fn, void* state) {
+    if(fn==nullptr) {
+        return nullptr;
+    }
+    return player_add_voice(&m_first,fn,state,m_allocator);
+}
 bool player::stop(voice_handle_t handle) {
     if(m_first==nullptr) {
         return handle==nullptr;
@@ -899,15 +897,15 @@ size_t player::buffer_size() const {
 }
 void player::update() {
     const size_t buffer_size = m_frame_count*m_channel_count*(m_bit_depth/8);
-    voice* first = (voice*)m_first;
+    voice_info_t* first = (voice_info_t*)m_first;
     bool has_voices = false;
-    voice_func_info_t vinf;
+    voice_function_info_t vinf;
     vinf.buffer = m_buffer;
     vinf.frame_count = m_frame_count;
     vinf.channel_count = m_channel_count;
     vinf.bit_depth = m_bit_depth;
     vinf.sample_max = m_sample_max;
-    voice* v = first;
+    voice_info_t* v = first;
     memset(m_buffer,0,buffer_size);
     while(v!=nullptr) {
         has_voices = true;

@@ -4,6 +4,16 @@
 #include <stddef.h>
 #include <string.h>
 #endif
+// info used for custom voice functions
+typedef struct voice_function_info {
+    void* buffer;
+    size_t frame_count;
+    unsigned int channel_count;
+    unsigned int bit_depth;
+    unsigned int sample_max;
+} voice_function_info_t;
+// custom voice function
+typedef void (*voice_function_t)(const voice_function_info_t& info, void* state);
 // the handle to refer to a playing voice
 typedef void* voice_handle_t;
 // called when the sound output should be disabled
@@ -62,6 +72,8 @@ public:
     voice_handle_t tri(float frequency, float amplitude = .8);
     // plays RIFF PCM wav data at the specified amplitude, optionally looping
     voice_handle_t wav(on_read_stream_callback on_read_stream, void* on_read_stream_state, float amplitude = .8, bool loop = false,on_seek_stream_callback on_seek_stream = nullptr, void* on_seek_stream_state=nullptr);
+    // plays a custom voice
+    voice_handle_t voice(voice_function_t fn, void* state = nullptr);
     // stops a playing voice, or all playing voices
     bool stop(voice_handle_t handle = nullptr);
     // set the sound disable callback
@@ -95,4 +107,10 @@ public:
     }
     // give a timeslice to the player to update itself
     void update();
+    // allocates memory for a custom voice state
+    template<typename T>
+    T* allocate_voice_state() const {
+        return (T*)m_allocator(sizeof(T));
+    }
+
 };
