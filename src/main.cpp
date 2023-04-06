@@ -35,7 +35,9 @@ void setup() {
     Serial.begin(115200);    
     if(!sound.initialize()) {
         printf("Sound initialization failure.\n");    
+        while(1);
     }
+    printf("sound throughput: %0.2fkbits/sec\n",sound.bytes_per_second()/1024.0f*8);
     i2s_config_t i2s_config;
     memset(&i2s_config,0,sizeof(i2s_config_t));
     i2s_config.mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN);
@@ -57,7 +59,7 @@ void setup() {
     sound.on_sound_disable([](void* state) {
         i2s_zero_dma_buffer(I2S_NUM_0);
     });
-    sound.wav(read_demo,nullptr,.5,true,seek_demo,nullptr);
+    sound.wav(read_demo,nullptr,.05,true,seek_demo,nullptr);
     //sound.sin(440,.5);
 }
 void loop() {

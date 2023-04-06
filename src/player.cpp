@@ -391,14 +391,14 @@ static void wav_voice_16_1_to_8_1(const voice_func_info_t& info, void*state) {
     }
 }
 
-static voice_handle_t player_add_voice( voice_handle_t* in_out_first, voice_func_t fn, void* fn_state) {
+static voice_handle_t player_add_voice( voice_handle_t* in_out_first, voice_func_t fn, void* fn_state, void*(allocator)(size_t)) {
     voice_t** pv = (voice_t**)in_out_first;
     voice_t* v = *pv;
     if(v!=nullptr) {
         while(v->next!=nullptr) {
             v=v->next;
         }
-        v->next = (voice_t*)malloc(sizeof(voice_t));
+        v->next = (voice_t*)allocator(sizeof(voice_t));
         if(v->next==nullptr) {
             return nullptr;
         }
@@ -407,7 +407,7 @@ static voice_handle_t player_add_voice( voice_handle_t* in_out_first, voice_func
         v->next->fn_state = fn_state;
         v=v->next;
     } else {
-        *pv = (voice_t*)malloc(sizeof(voice_t));
+        *pv = (voice_t*)allocator(sizeof(voice_t));
         v=*pv;
         v->next = nullptr;
         v->fn = fn;
@@ -415,16 +415,16 @@ static voice_handle_t player_add_voice( voice_handle_t* in_out_first, voice_func
     }
    return v;
 }
-static bool player_remove_voice(voice_handle_t* in_out_first,voice_handle_t handle) {
+static bool player_remove_voice(voice_handle_t* in_out_first,voice_handle_t handle,void(deallocator)(void*)) {
     voice_t** pv = (voice_t**)in_out_first;
     voice_t* v = *pv;
     if(v==nullptr) {return false;}
     if(handle==v) {
         *pv = v->next;
         if(v->fn_state!=nullptr) {
-            free(v->fn_state);
+            deallocator(v->fn_state);
         }
-        free(v);
+        deallocator(v);
     } else {
         while(v->next!=handle) {
             v=v->next;
@@ -442,8 +442,8 @@ static bool player_remove_voice(voice_handle_t* in_out_first,voice_handle_t hand
         } else {
             v->next = nullptr;
         }
-        free(to_free);
-        free(to_free2);
+        deallocator(to_free);
+        deallocator(to_free2);
     }
     return true;
 }
@@ -465,8 +465,11 @@ void player::do_move(player& rhs) {
     m_on_flush_cb = rhs.m_on_flush_cb;
     rhs.m_on_flush_cb = nullptr;
     m_on_flush_state = rhs.m_on_flush_state;
+    m_allocator = rhs.m_allocator;
+    m_reallocator = rhs.m_reallocator;
+    m_deallocator = rhs.m_deallocator;
 }
-player::player(unsigned int sample_rate, unsigned short channel_count, unsigned short bit_depth, size_t frame_count) :
+player::player(unsigned int sample_rate, unsigned short channel_count, unsigned short bit_depth, size_t frame_count, void*(allocator)(size_t), void*(reallocator)(void*,size_t), void(deallocator)(void*)) :
                 m_first(nullptr),
                 m_buffer(nullptr),
                 m_frame_count(frame_count),
@@ -478,7 +481,10 @@ player::player(unsigned int sample_rate, unsigned short channel_count, unsigned 
                 m_on_sound_enable_cb(nullptr),
                 m_on_sound_enable_state(nullptr),
                 m_on_flush_cb(nullptr),
-                m_on_flush_state(nullptr)
+                m_on_flush_state(nullptr),
+                m_allocator(allocator),
+                m_reallocator(reallocator),
+                m_deallocator(deallocator)
                 {
 }
 player::~player() {
@@ -496,7 +502,7 @@ bool player::initialize() {
     if(m_buffer!=nullptr) {
         return true;
     }
-    m_buffer=malloc(m_frame_count*m_channel_count*(m_bit_depth/8));
+    m_buffer=m_allocator(m_frame_count*m_channel_count*(m_bit_depth/8));
     if(m_buffer==nullptr) {
         return false;
     }
@@ -509,11 +515,11 @@ void player::deinitialize() {
         return;
     }
     stop();
-    free(m_buffer);
+    m_deallocator(m_buffer);
     m_buffer = nullptr;
 }
-static voice_handle_t player_waveform(unsigned int sample_rate,voice_handle_t* in_out_first, voice_func_t fn, float frequency, float amplitude = .8) {
-    waveform_info_t* wi = (waveform_info_t*)malloc(sizeof(waveform_info_t));
+static voice_handle_t player_waveform(unsigned int sample_rate,voice_handle_t* in_out_first, voice_func_t fn, float frequency, float amplitude, void*(allocator)(size_t)) {
+    waveform_info_t* wi = (waveform_info_t*)allocator(sizeof(waveform_info_t));
     if(wi==nullptr) {
         return nullptr;
     }
@@ -521,22 +527,22 @@ static voice_handle_t player_waveform(unsigned int sample_rate,voice_handle_t* i
     wi->amplitude = amplitude;
     wi->phase = 0;
     wi->phase_delta = player_two_pi*wi->frequency/(float)sample_rate;
-    return player_add_voice(in_out_first,fn,wi);
+    return player_add_voice(in_out_first,fn,wi,allocator);
 }
 voice_handle_t player::sin(float frequency, float amplitude) {
-    voice_handle_t result = player_waveform(m_sample_rate,&m_first,sin_voice,frequency,amplitude);
+    voice_handle_t result = player_waveform(m_sample_rate,&m_first,sin_voice,frequency,amplitude,m_allocator);
     return result;
 }
 voice_handle_t player::sqr(float frequency, float amplitude) {
-    voice_handle_t result = player_waveform(m_sample_rate,&m_first,sqr_voice,frequency,amplitude);
+    voice_handle_t result = player_waveform(m_sample_rate,&m_first,sqr_voice,frequency,amplitude,m_allocator);
     return result;
 }
 voice_handle_t player::saw(float frequency, float amplitude) {
-    voice_handle_t result = player_waveform(m_sample_rate,&m_first,saw_voice,frequency,amplitude);
+    voice_handle_t result = player_waveform(m_sample_rate,&m_first,saw_voice,frequency,amplitude,m_allocator);
     return result;
 }
 voice_handle_t player::tri(float frequency, float amplitude) {
-    voice_handle_t result = player_waveform(m_sample_rate,&m_first,tri_voice,frequency,amplitude);
+    voice_handle_t result = player_waveform(m_sample_rate,&m_first,tri_voice,frequency,amplitude,m_allocator);
     return result;
 }
 
@@ -671,7 +677,7 @@ voice_handle_t player::wav(on_read_stream_callback on_read_stream, void* on_read
         }
 
     }
-    wav_info_t* wi = (wav_info_t*)malloc(sizeof(wav_info_t));
+    wav_info_t* wi = (wav_info_t*)m_allocator(sizeof(wav_info_t));
     if(wi==nullptr) {
         return nullptr;
     }
@@ -690,20 +696,31 @@ voice_handle_t player::wav(on_read_stream_callback on_read_stream, void* on_read
     wi->pos = 0;
 
     if(wi->channel_count==2 && wi->bit_depth==16 && m_channel_count==2 && m_bit_depth==16) {
-        voice_handle_t res = player_add_voice(&m_first,wav_voice_16_2_to_16_2,wi);
+        voice_handle_t res = player_add_voice(&m_first,wav_voice_16_2_to_16_2,wi,m_allocator);
+        if(res==nullptr) {
+            m_deallocator(wi);
+        }
         return res;
     } else if(wi->channel_count==1 && wi->bit_depth==16 && m_channel_count==2 && m_bit_depth==16) {
-        voice_handle_t res = player_add_voice(&m_first,wav_voice_16_1_to_16_2,wi);
+        voice_handle_t res = player_add_voice(&m_first,wav_voice_16_1_to_16_2,wi,m_allocator);
+        if(res==nullptr) {
+            m_deallocator(wi);
+        }
         return res;
     } else if(wi->channel_count==2 && wi->bit_depth==16 && m_channel_count==1 && m_bit_depth==8) {
-        voice_handle_t res = player_add_voice(&m_first,wav_voice_16_2_to_8_1,wi);
+        voice_handle_t res = player_add_voice(&m_first,wav_voice_16_2_to_8_1,wi,m_allocator);
+        if(res==nullptr) {
+            m_deallocator(wi);
+        }
         return res;
     } else if(wi->channel_count==1 && wi->bit_depth==16 && m_channel_count==1 && m_bit_depth==8) {
-        voice_handle_t res = player_add_voice(&m_first,wav_voice_16_1_to_8_1,wi);
+        voice_handle_t res = player_add_voice(&m_first,wav_voice_16_1_to_8_1,wi,m_allocator);
+        if(res==nullptr) {
+            m_deallocator(wi);
+        }
         return res;
     }
-    free(wi);
-
+    m_deallocator(wi);
     return nullptr;
     
 }
@@ -713,11 +730,11 @@ bool player::stop(voice_handle_t handle) {
     }
     if(handle==nullptr) {
         while(m_first!=nullptr) {
-            player_remove_voice((voice_handle_t*)&m_first,(voice_handle_t)m_first);
+            player_remove_voice((voice_handle_t*)&m_first,(voice_handle_t)m_first,m_deallocator);
         }
         return m_first==nullptr;
     }
-    bool result = player_remove_voice(&m_first,handle);
+    bool result = player_remove_voice(&m_first,handle,m_deallocator);
     return result;
 }
 void player::on_sound_disable(on_sound_disable_callback cb, void* state) {
@@ -738,7 +755,7 @@ bool player::realloc_buffer() {
         deinitialize();
         return true;
     }
-    void* resized = realloc(m_buffer,new_size);
+    void* resized = m_reallocator(m_buffer,new_size);
     if(resized==nullptr) {
         return false;
     }

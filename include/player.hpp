@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #else
 #include <stddef.h>
+#include <string.h>
 #endif
 // the handle to refer to a playing voice
 typedef void* voice_handle_t;
@@ -31,6 +32,9 @@ class player final {
     void* m_on_sound_enable_state;
     on_flush_callback m_on_flush_cb;
     void* m_on_flush_state;
+    void*(*m_allocator)(size_t);
+    void*(*m_reallocator)(void*,size_t);
+    void(*m_deallocator)(void*);
     player(const player& rhs)=delete;
     player& operator=(const player& rhs)=delete;
     void do_move(player& rhs);
@@ -38,7 +42,7 @@ class player final {
     bool realloc_buffer();
 public:
     // construct the player with the specified arguments
-    player(unsigned int sample_rate = 44100, unsigned short channels = 2, unsigned short bit_depth = 16, size_t frame_count = 512);
+    player(unsigned int sample_rate = 44100, unsigned short channels = 2, unsigned short bit_depth = 16, size_t frame_count = 512, void*(allocator)(size_t)=::malloc,void*(reallocator)(void*,size_t)=::realloc,void(deallocator)(void*)=::free);
     player(player&& rhs);
     ~player();
     player& operator=(player&& rhs);
@@ -85,10 +89,10 @@ public:
     bool bit_depth(unsigned short value);
     // indicates the size of the internal audio buffer
     size_t buffer_size() const;
+    // indicates the bandwidth required to play the buffer
+    size_t bytes_per_second() {
+        return m_sample_rate*m_channel_count*(m_bit_depth/8);
+    }
     // give a timeslice to the player to update itself
     void update();
-    // gets the size of each frame in bytes
-    constexpr static size_t frame_size(unsigned short channel_count, unsigned short bit_depth) {
-        return channel_count * (bit_depth/8);
-    }
 };
