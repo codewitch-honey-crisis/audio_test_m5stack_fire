@@ -44,7 +44,7 @@ void setup() {
     sound.on_sound_disable([](void* state) {
         i2s_zero_dma_buffer(I2S_NUM_0);
     });
-    sound.wav(read_demo,nullptr,.08,true,seek_demo,nullptr);
+    sound.wav(0,read_demo,nullptr,.08,true,seek_demo,nullptr);
 }
 void loop() {
     sound.update();

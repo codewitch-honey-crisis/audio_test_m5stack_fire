@@ -63,19 +63,21 @@ public:
     // deinitializes the player
     void deinitialize();
     // plays a sine wave at the specified frequency and amplitude
-    voice_handle_t sin(float frequency, float amplitude = .8);
+    voice_handle_t sin(unsigned short port, float frequency, float amplitude = .8);
     // plays a square wave at the specified frequency and amplitude
-    voice_handle_t sqr(float frequency, float amplitude = .8);
+    voice_handle_t sqr(unsigned short port, float frequency, float amplitude = .8);
     // plays a sawtooth wave at the specified frequency and amplitude
-    voice_handle_t saw(float frequency, float amplitude = .8);
+    voice_handle_t saw(unsigned short port, float frequency, float amplitude = .8);
     // plays a triangle wave at the specified frequency and amplitude
-    voice_handle_t tri(float frequency, float amplitude = .8);
+    voice_handle_t tri(unsigned short port, float frequency, float amplitude = .8);
     // plays RIFF PCM wav data at the specified amplitude, optionally looping
-    voice_handle_t wav(on_read_stream_callback on_read_stream, void* on_read_stream_state, float amplitude = .8, bool loop = false,on_seek_stream_callback on_seek_stream = nullptr, void* on_seek_stream_state=nullptr);
+    voice_handle_t wav(unsigned short port, on_read_stream_callback on_read_stream, void* on_read_stream_state, float amplitude = .8, bool loop = false,on_seek_stream_callback on_seek_stream = nullptr, void* on_seek_stream_state=nullptr);
     // plays a custom voice
-    voice_handle_t voice(voice_function_t fn, void* state = nullptr);
+    voice_handle_t voice(unsigned short port, voice_function_t fn, void* state = nullptr);
     // stops a playing voice, or all playing voices
     bool stop(voice_handle_t handle = nullptr);
+    // stops a playing voice, or all playing voices
+    bool stop(unsigned short port);
     // set the sound disable callback
     void on_sound_disable(on_sound_disable_callback cb, void* state=nullptr);
     // set the sound enable callback
