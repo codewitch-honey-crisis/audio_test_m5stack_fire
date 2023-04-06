@@ -293,7 +293,7 @@ static void wav_voice_16_2_to_16_2(const voice_function_info_t& info, void*state
             } else {
                 break;
             }
-            *dst+=(uint16_t)((i16+32768U)*wi->amplitude);
+            *dst+=(uint16_t)(((i16*wi->amplitude)+32768U));
             ++dst;
         }
     }
@@ -327,7 +327,7 @@ static void wav_voice_16_2_to_8_1(const voice_function_info_t& info, void*state)
         }
         i32+=i16;
         i32>>=1;
-        *dst+=(uint8_t)(((i32+32768U)>>8)*wi->amplitude);
+        *dst+=(uint8_t)((((int32_t)(i32*wi->amplitude+0.5f)+32768U)>>8));
         ++dst;
     }
 }
@@ -351,7 +351,7 @@ static void wav_voice_16_1_to_16_2(const voice_function_info_t& info, void*state
         } else {
             break;
         }
-        uint16_t u16 = (uint16_t)((i16+32768U)*wi->amplitude);
+        uint16_t u16 = (uint16_t)(((int16_t)(i16*wi->amplitude+0.5f)+32768U));
         for(int j=0;j<info.channel_count;++j) {
             *dst+=u16;
             ++dst;
@@ -387,7 +387,7 @@ static void wav_voice_16_2_to_16_1(const voice_function_info_t& info, void*state
         }
         i32+=i16;
         i32>>=1;
-        *dst+=(uint8_t)((i32+32768U)*wi->amplitude);
+        *dst+=(uint8_t)(((int32_t)(i32*wi->amplitude+0.5f)+32768U));
         ++dst;
     }
 }
@@ -411,7 +411,7 @@ static void wav_voice_16_1_to_16_1(const voice_function_info_t& info, void*state
         } else {
             break;
         }
-        uint16_t u16 = (uint16_t)((i16+32768U)*wi->amplitude);
+        uint16_t u16 = (uint16_t)(((int16_t)(i16*wi->amplitude+0.5f)+32768U));
         *dst+=u16;
         ++dst;
     }
@@ -437,7 +437,7 @@ static void wav_voice_16_1_to_8_1(const voice_function_info_t& info, void*state)
         } else {
             break;
         }
-        uint8_t u8 = (uint8_t)(((i16+32768U)>>8)*wi->amplitude);
+        uint8_t u8 = (uint8_t)((((int16_t)(i16*wi->amplitude+0.5f)+32768U)>>8));
         *dst+=u8;
         ++dst;
     }
