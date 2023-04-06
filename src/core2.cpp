@@ -1,7 +1,10 @@
 #include <Arduino.h>
 #include <driver/i2s.h>
+#include <m5core2_power.hpp>
 #include <player.hpp>
 #include <test.hpp>
+
+m5core2_power power;
 
 player sound(44100,1,16,512);
 
@@ -18,6 +21,8 @@ void seek_demo(unsigned long long position, void* state) {
 }
 void setup() {
     Serial.begin(115200);    
+    power.initialize();
+    power.speaker_enable(true);
     if(!sound.initialize()) {
         printf("Sound initialization failure.\n");    
         while(1);
