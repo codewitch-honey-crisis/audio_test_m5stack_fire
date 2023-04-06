@@ -17,7 +17,7 @@ constexpr static const float player_two_pi = player_pi*2.0f;
 typedef struct voice_func_info {
     void* buffer;
     size_t frame_count;
-    unsigned int channels;
+    unsigned int channel_count;
     unsigned int bit_depth;
     unsigned int sample_max;
 } voice_func_info_t;
@@ -40,7 +40,7 @@ typedef struct wav_info {
     void* on_seek_stream_state;
     float amplitude;
     bool loop;
-    unsigned short channels;
+    unsigned short channel_count;
     unsigned short bit_depth;
     unsigned long long start;
     unsigned long long length;
@@ -140,23 +140,23 @@ static void sin_voice(const voice_func_info_t& info, void*state) {
         float samp = (f*wi->amplitude)*info.sample_max;
         switch(info.bit_depth) {
             case 8: {
-                uint8_t* p = ((uint8_t*)info.buffer)+(i*info.channels);
+                uint8_t* p = ((uint8_t*)info.buffer)+(i*info.channel_count);
                 uint32_t tmp = *p+roundf(samp);
                 if(tmp>info.sample_max) {
                     tmp = info.sample_max;
                 }
-                for(int j = 0;j<info.channels;++j) {
+                for(int j = 0;j<info.channel_count;++j) {
                     *p++=tmp;
                 }
             }
             break;
             case 16: {
-                uint16_t* p = ((uint16_t*)info.buffer)+(i*info.channels);
+                uint16_t* p = ((uint16_t*)info.buffer)+(i*info.channel_count);
                 uint32_t tmp = *p+roundf(samp);
                 if(tmp>info.sample_max) {
                     tmp = info.sample_max;
                 }
-                for(int j = 0;j<info.channels;++j) {
+                for(int j = 0;j<info.channel_count;++j) {
                     *p++=tmp;
                 }
             }
@@ -177,23 +177,23 @@ static void sqr_voice(const voice_func_info_t& info, void*state) {
         float samp = (f*wi->amplitude)*info.sample_max;
         switch(info.bit_depth) {
             case 8: {
-                uint8_t* p = ((uint8_t*)info.buffer)+(i*info.channels);
+                uint8_t* p = ((uint8_t*)info.buffer)+(i*info.channel_count);
                 uint32_t tmp = *p+roundf(samp);
                 if(tmp>info.sample_max) {
                     tmp = info.sample_max;
                 }
-                for(int j = 0;j<info.channels;++j) {
+                for(int j = 0;j<info.channel_count;++j) {
                     *p++=tmp;
                 }
             }
             break;
             case 16: {
-                uint16_t* p = ((uint16_t*)info.buffer)+(i*info.channels);
+                uint16_t* p = ((uint16_t*)info.buffer)+(i*info.channel_count);
                 uint32_t tmp = *p+roundf(samp);
                 if(tmp>info.sample_max) {
                     tmp = info.sample_max;
                 }
-                for(int j = 0;j<info.channels;++j) {
+                for(int j = 0;j<info.channel_count;++j) {
                     *p++=tmp;
                 }
             }
@@ -215,23 +215,23 @@ static void saw_voice(const voice_func_info_t& info, void*state) {
         float samp = (f*wi->amplitude)*info.sample_max;
         switch(info.bit_depth) {
             case 8: {
-                uint8_t* p = ((uint8_t*)info.buffer)+(i*info.channels);
+                uint8_t* p = ((uint8_t*)info.buffer)+(i*info.channel_count);
                 uint32_t tmp = *p+roundf(samp);
                 if(tmp>info.sample_max) {
                     tmp = info.sample_max;
                 }
-                for(int j = 0;j<info.channels;++j) {
+                for(int j = 0;j<info.channel_count;++j) {
                     *p++=tmp;
                 }
             }
             break;
             case 16: {
-                uint16_t* p = ((uint16_t*)info.buffer)+(i*info.channels);
+                uint16_t* p = ((uint16_t*)info.buffer)+(i*info.channel_count);
                 uint32_t tmp = *p+roundf(samp);
                 if(tmp>info.sample_max) {
                     tmp = info.sample_max;
                 }
-                for(int j = 0;j<info.channels;++j) {
+                for(int j = 0;j<info.channel_count;++j) {
                     *p++=tmp;
                 }
             }
@@ -252,23 +252,23 @@ static void tri_voice(const voice_func_info_t& info, void*state) {
         float samp = (f*wi->amplitude)*info.sample_max;
                 switch(info.bit_depth) {
             case 8: {
-                uint8_t* p = ((uint8_t*)info.buffer)+(i*info.channels);
+                uint8_t* p = ((uint8_t*)info.buffer)+(i*info.channel_count);
                 uint32_t tmp = *p+roundf(samp);
                 if(tmp>info.sample_max) {
                     tmp = info.sample_max;
                 }
-                for(int j = 0;j<info.channels;++j) {
+                for(int j = 0;j<info.channel_count;++j) {
                     *p++=tmp;
                 }
             }
             break;
             case 16: {
-                uint16_t* p = ((uint16_t*)info.buffer)+(i*info.channels);
+                uint16_t* p = ((uint16_t*)info.buffer)+(i*info.channel_count);
                 uint32_t tmp = *p+roundf(samp);
                 if(tmp>info.sample_max) {
                     tmp = info.sample_max;
                 }
-                for(int j = 0;j<info.channels;++j) {
+                for(int j = 0;j<info.channel_count;++j) {
                     *p++=tmp;
                 }
             }
@@ -294,7 +294,7 @@ static void wav_voice_16_2_to_16_2(const voice_func_info_t& info, void*state) {
             wi->on_seek_stream(wi->start,wi->on_seek_stream_state);
             wi->pos = 0;
         }
-        for(int j=0;j<info.channels;++j) {
+        for(int j=0;j<info.channel_count;++j) {
             if(player_read16s(wi->on_read_stream,wi->on_read_stream_state,&i16)) {
                 wi->pos+=2;
             } else {
@@ -359,7 +359,7 @@ static void wav_voice_16_1_to_16_2(const voice_func_info_t& info, void*state) {
             break;
         }
         uint16_t u16 = (uint16_t)((i16+32768U)*wi->amplitude);
-        for(int j=0;j<info.channels;++j) {
+        for(int j=0;j<info.channel_count;++j) {
             *dst+=u16;
             ++dst;
         }
@@ -466,13 +466,12 @@ void player::do_move(player& rhs) {
     rhs.m_on_flush_cb = nullptr;
     m_on_flush_state = rhs.m_on_flush_state;
 }
-player::player(unsigned int sample_rate, unsigned short channels, unsigned short bit_depth, size_t frame_count) : m_task(nullptr),
-                m_sync(nullptr),
+player::player(unsigned int sample_rate, unsigned short channel_count, unsigned short bit_depth, size_t frame_count) :
                 m_first(nullptr),
                 m_buffer(nullptr),
                 m_frame_count(frame_count),
                 m_sample_rate(sample_rate),
-                m_channels(channels),
+                m_channel_count(channel_count),
                 m_bit_depth(bit_depth),
                 m_on_sound_disable_cb(nullptr),
                 m_on_sound_disable_state(nullptr),
@@ -497,7 +496,7 @@ bool player::initialize() {
     if(m_buffer!=nullptr) {
         return true;
     }
-    m_buffer=malloc(m_frame_count*m_channels*(m_bit_depth/8));
+    m_buffer=malloc(m_frame_count*m_channel_count*(m_bit_depth/8));
     if(m_buffer==nullptr) {
         return false;
     }
@@ -549,7 +548,7 @@ voice_handle_t player::wav(on_read_stream_callback on_read_stream, void* on_read
         return nullptr;
     }
     unsigned int sample_rate=0;
-    unsigned short channels=0;
+    unsigned short channel_count=0;
     unsigned short bit_depth=0;
     unsigned long long start=0;
     unsigned long long length=0;
@@ -624,8 +623,8 @@ voice_handle_t player::wav(on_read_stream_callback on_read_stream, void* on_read
             if(!player_read16(on_read_stream,on_read_stream_state,&t16)) {
                 return nullptr;
             }
-            channels = t16;
-            if(channels<1 || channels>2) {
+            channel_count = t16;
+            if(channel_count<1 || channel_count>2) {
                 return nullptr;
             }
             pos+=2;
@@ -682,7 +681,7 @@ voice_handle_t player::wav(on_read_stream_callback on_read_stream, void* on_read
     wi->on_seek_stream_state = on_seek_stream_state;
     wi->amplitude = amplitude;
     wi->bit_depth = bit_depth;
-    wi->channels = channels;
+    wi->channel_count = channel_count;
     wi->loop = loop;
     wi->on_read_stream = on_read_stream;
     wi->on_read_stream_state = on_read_stream_state;
@@ -690,16 +689,16 @@ voice_handle_t player::wav(on_read_stream_callback on_read_stream, void* on_read
     wi->length = length;
     wi->pos = 0;
 
-    if(wi->channels==2 && wi->bit_depth==16 && m_channels==2 && m_bit_depth==16) {
+    if(wi->channel_count==2 && wi->bit_depth==16 && m_channel_count==2 && m_bit_depth==16) {
         voice_handle_t res = player_add_voice(&m_first,wav_voice_16_2_to_16_2,wi);
         return res;
-    } else if(wi->channels==1 && wi->bit_depth==16 && m_channels==2 && m_bit_depth==16) {
+    } else if(wi->channel_count==1 && wi->bit_depth==16 && m_channel_count==2 && m_bit_depth==16) {
         voice_handle_t res = player_add_voice(&m_first,wav_voice_16_1_to_16_2,wi);
         return res;
-    } else if(wi->channels==2 && wi->bit_depth==16 && m_channels==1 && m_bit_depth==8) {
+    } else if(wi->channel_count==2 && wi->bit_depth==16 && m_channel_count==1 && m_bit_depth==8) {
         voice_handle_t res = player_add_voice(&m_first,wav_voice_16_2_to_8_1,wi);
         return res;
-    } else if(wi->channels==1 && wi->bit_depth==16 && m_channels==1 && m_bit_depth==8) {
+    } else if(wi->channel_count==1 && wi->bit_depth==16 && m_channel_count==1 && m_bit_depth==8) {
         voice_handle_t res = player_add_voice(&m_first,wav_voice_16_1_to_8_1,wi);
         return res;
     }
@@ -734,7 +733,7 @@ void player::on_flush(on_flush_callback cb, void* state) {
     m_on_flush_state = state;
 }
 bool player::realloc_buffer() {
-    size_t new_size = m_frame_count * m_channels * (m_bit_depth/8);
+    size_t new_size = m_frame_count * m_channel_count * (m_bit_depth/8);
     if(new_size==0) {
         deinitialize();
         return true;
@@ -773,18 +772,18 @@ bool player::sample_rate(unsigned int value) {
     m_sample_rate = value;
     return true;
 }
-unsigned short player::channels() const {
-    return m_channels;
+unsigned short player::channel_count() const {
+    return m_channel_count;
 }
-bool player::channels(unsigned short value) {
+bool player::channel_count(unsigned short value) {
     if(value==0) {
         return false;
     }
-    if(value!=m_channels) {
-        unsigned int tmp = m_channels;
-        m_channels = value;
+    if(value!=m_channel_count) {
+        unsigned int tmp = m_channel_count;
+        m_channel_count = value;
         if(!realloc_buffer()) {
-            m_channels = tmp;
+            m_channel_count = tmp;
             return false;
         }
     }
@@ -808,13 +807,13 @@ bool player::bit_depth(unsigned short value) {
     return true;
 }
 void player::update() {
-    const size_t buffer_size = m_frame_count*m_channels*(m_bit_depth/8);
+    const size_t buffer_size = m_frame_count*m_channel_count*(m_bit_depth/8);
     voice* first = (voice*)m_first;
     bool has_voices = false;
     voice_func_info_t vinf;
     vinf.buffer = m_buffer;
     vinf.frame_count = m_frame_count;
-    vinf.channels = m_channels;
+    vinf.channel_count = m_channel_count;
     vinf.bit_depth = m_bit_depth;
     vinf.sample_max = m_sample_max;
     voice* v = first;
