@@ -44,7 +44,7 @@ void setup() {
     i2s_config.channel_format = I2S_CHANNEL_FMT_ONLY_LEFT;
     i2s_config.communication_format = I2S_COMM_FORMAT_STAND_MSB;
     i2s_config.dma_buf_count = 2;
-    i2s_config.dma_buf_len = player::frame_size(sound.channel_count(),sound.bit_depth())*player.frame_count();
+    i2s_config.dma_buf_len = sound.buffer_size();
     i2s_config.use_apll = true;
     i2s_config.intr_alloc_flags = ESP_INTR_FLAG_LEVEL2;
     i2s_driver_install((i2s_port_t)I2S_NUM_0, &i2s_config, 0, NULL);

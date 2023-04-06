@@ -806,6 +806,9 @@ bool player::bit_depth(unsigned short value) {
     }
     return true;
 }
+size_t player::buffer_size() const {
+    return m_frame_count*m_channel_count*(m_bit_depth/8);
+}
 void player::update() {
     const size_t buffer_size = m_frame_count*m_channel_count*(m_bit_depth/8);
     voice* first = (voice*)m_first;

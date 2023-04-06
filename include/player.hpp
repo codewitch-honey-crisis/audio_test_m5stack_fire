@@ -83,6 +83,8 @@ public:
     unsigned short bit_depth() const;
     // set the bit depth
     bool bit_depth(unsigned short value);
+    // indicates the size of the internal audio buffer
+    size_t buffer_size() const;
     // give a timeslice to the player to update itself
     void update();
     // gets the size of each frame in bytes
