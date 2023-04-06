@@ -33,6 +33,9 @@ void seek_demo(unsigned long long position, void* state) {
 }
 void setup() {
     Serial.begin(115200);    
+    if(!sound.initialize()) {
+        printf("Sound initialization failure.\n");    
+    }
     i2s_config_t i2s_config;
     memset(&i2s_config,0,sizeof(i2s_config_t));
     i2s_config.mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN);
@@ -41,14 +44,12 @@ void setup() {
     i2s_config.channel_format = I2S_CHANNEL_FMT_ONLY_LEFT;
     i2s_config.communication_format = I2S_COMM_FORMAT_STAND_MSB;
     i2s_config.dma_buf_count = 2;
-    i2s_config.dma_buf_len = 512;
+    i2s_config.dma_buf_len = player::frame_size(sound.channel_count(),sound.bit_depth());
     i2s_config.use_apll = true;
     i2s_config.intr_alloc_flags = ESP_INTR_FLAG_LEVEL2;
     i2s_driver_install((i2s_port_t)I2S_NUM_0, &i2s_config, 0, NULL);
     i2s_set_pin((i2s_port_t)0,nullptr);
-    if(!sound.initialize()) {
-        printf("Sound initialization failure.\n");    
-    }
+    
     sound.on_flush([](const void* buffer,size_t buffer_size,void* state){
         size_t written;
         i2s_write(I2S_NUM_0,buffer,buffer_size,&written,portMAX_DELAY);

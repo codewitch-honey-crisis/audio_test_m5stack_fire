@@ -85,4 +85,8 @@ public:
     bool bit_depth(unsigned short value);
     // give a timeslice to the player to update itself
     void update();
+    // gets the size of each frame in bytes
+    constexpr static size_t frame_size(unsigned short channel_count, unsigned short bit_depth) {
+        return channel_count * (bit_depth/8);
+    }
 };
