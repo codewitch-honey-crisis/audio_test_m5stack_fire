@@ -2,22 +2,6 @@
 #include <driver/i2s.h>
 #include <player.hpp>
 #include <test.hpp>
-// pin assignments
-constexpr static const uint8_t spi_host = VSPI;
-constexpr static const int8_t lcd_pin_bl = 32;
-constexpr static const int8_t lcd_pin_dc = 27;
-constexpr static const int8_t lcd_pin_rst = 33;
-constexpr static const int8_t lcd_pin_cs = 14;
-constexpr static const int8_t sd_pin_cs = 4;
-constexpr static const int8_t speaker_pin = 25;
-constexpr static const int8_t mic_pin = 34;
-constexpr static const int8_t button_a_pin = 39;
-constexpr static const int8_t button_b_pin = 38;
-constexpr static const int8_t button_c_pin = 37;
-constexpr static const int8_t led_pin = 15;
-constexpr static const int8_t spi_pin_mosi = 23;
-constexpr static const int8_t spi_pin_clk = 18;
-constexpr static const int8_t spi_pin_miso = 19;
 player sound(44100,1,8,512);
 
 size_t test_len = sizeof(test_data);
@@ -60,8 +44,7 @@ void setup() {
     sound.on_sound_disable([](void* state) {
         i2s_zero_dma_buffer(I2S_NUM_0);
     });
-    sound.wav(read_demo,nullptr,.05,true,seek_demo,nullptr);
-    //sound.sin(440,.5);
+    sound.wav(read_demo,nullptr,.08,true,seek_demo,nullptr);
 }
 void loop() {
     sound.update();

@@ -365,6 +365,65 @@ static void wav_voice_16_1_to_16_2(const voice_func_info_t& info, void*state) {
         }
     }
 }
+static void wav_voice_16_2_to_16_1(const voice_func_info_t& info, void*state) {
+    wav_info_t* wi = (wav_info_t*)state;
+    if(!wi->loop&&wi->pos>=wi->length) {
+        return;
+    }
+    uint16_t* dst = (uint16_t*)info.buffer;
+    for(int i = 0;i<info.frame_count;++i) {
+        int16_t i16;
+        if(wi->pos>=wi->length) {
+            if(!wi->loop) {
+                break;
+            }
+            wi->on_seek_stream(wi->start,wi->on_seek_stream_state);
+            wi->pos = 0;
+        }
+        
+        if(player_read16s(wi->on_read_stream,wi->on_read_stream_state,&i16)) {
+            wi->pos+=2;
+        } else {
+            return;
+        }
+        int32_t i32 = i16;
+        if(player_read16s(wi->on_read_stream,wi->on_read_stream_state,&i16)) {
+            wi->pos+=2;
+        } else {
+            return;
+        }
+        i32+=i16;
+        i32>>=1;
+        *dst+=(uint8_t)((i32+32768U)*wi->amplitude);
+        ++dst;
+    }
+}
+static void wav_voice_16_1_to_16_1(const voice_func_info_t& info, void*state) {
+    wav_info_t* wi = (wav_info_t*)state;
+    if(!wi->loop&&wi->pos>=wi->length) {
+        return;
+    }
+    uint16_t* dst = (uint16_t*)info.buffer;
+    for(int i = 0;i<info.frame_count;++i) {
+        int16_t i16;
+        if(wi->pos>=wi->length) {
+            if(!wi->loop) {
+                break;
+            }
+            wi->on_seek_stream(wi->start,wi->on_seek_stream_state);
+            wi->pos = 0;
+        }
+        if(player_read16s(wi->on_read_stream,wi->on_read_stream_state,&i16)) {
+            wi->pos+=2;
+        } else {
+            break;
+        }
+        uint16_t u16 = (uint16_t)((i16+32768U)*wi->amplitude);
+        *dst+=u16;
+        ++dst;
+    }
+}
+
 static void wav_voice_16_1_to_8_1(const voice_func_info_t& info, void*state) {
     wav_info_t* wi = (wav_info_t*)state;
     if(!wi->loop&&wi->pos>=wi->length) {
@@ -703,6 +762,18 @@ voice_handle_t player::wav(on_read_stream_callback on_read_stream, void* on_read
         return res;
     } else if(wi->channel_count==1 && wi->bit_depth==16 && m_channel_count==2 && m_bit_depth==16) {
         voice_handle_t res = player_add_voice(&m_first,wav_voice_16_1_to_16_2,wi,m_allocator);
+        if(res==nullptr) {
+            m_deallocator(wi);
+        }
+        return res;
+    } else if(wi->channel_count==2 && wi->bit_depth==16 && m_channel_count==1 && m_bit_depth==16) {
+        voice_handle_t res = player_add_voice(&m_first,wav_voice_16_2_to_16_1,wi,m_allocator);
+        if(res==nullptr) {
+            m_deallocator(wi);
+        }
+        return res;
+    } else if(wi->channel_count==1 && wi->bit_depth==16 && m_channel_count==1 && m_bit_depth==16) {
+        voice_handle_t res = player_add_voice(&m_first,wav_voice_16_1_to_16_1,wi,m_allocator);
         if(res==nullptr) {
             m_deallocator(wi);
         }
